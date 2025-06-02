@@ -3,6 +3,10 @@ use std::collections::HashMap;
 use anyhow::{Result, anyhow};
 use reqwest::Client;
 use serde::Deserialize;
+use tweet::Tweet;
+
+mod account;
+mod tweet;
 
 #[derive(Deserialize, Debug)]
 struct CredentialApplication {
@@ -13,83 +17,6 @@ struct CredentialApplication {
 #[derive(Deserialize)]
 struct TokenResponse {
     access_token: String,
-}
-
-#[derive(Deserialize)]
-pub struct AccountField {
-    name: String,
-    value: String,
-}
-
-#[derive(Deserialize)]
-pub struct Account {
-    id: String,
-    acct: String,
-    display_name: String,
-    bot: bool,
-    note: String,
-    url: String,
-    follower_count: u32,
-    following_count: u32,
-    statuses_count: u32,
-    fields: Vec<AccountField>,
-}
-
-// TODO
-#[derive(Deserialize)]
-pub struct MediaAttatchment {}
-
-#[derive(Deserialize)]
-pub struct TweetMention {
-    id: String,
-    acct: String,
-    url: String,
-}
-
-#[derive(Deserialize)]
-pub struct TweetTag {
-    name: String,
-}
-
-#[derive(Deserialize)]
-pub struct PollOption {
-    title: String,
-    votes_count: u32,
-}
-
-#[derive(Deserialize)]
-pub struct Poll {
-    id: String,
-    expires_at: String,
-    expired: bool,
-    multiple: bool,
-    votes_count: u32,
-    voters_count: Option<u32>,
-}
-
-#[derive(Deserialize)]
-pub struct Tweet {
-    id: String,
-    created_at: String,
-    in_response_to_id: Option<String>,
-    in_reply_to_account_id: Option<String>,
-    sensitive: bool,
-    spoiler_text: String,
-    visibility: String,
-    uri: String,
-    replies_count: u32,
-    reblog_count: u32,
-    favourites_count: u32,
-    favourited: bool,
-    reblogged: bool,
-    muted: bool,
-    content: String,
-    reblog: Option<Box<Tweet>>,
-    account: Account,
-    media_attachments: Vec<MediaAttatchment>,
-    mentions: Vec<TweetMention>,
-    tags: Vec<TweetTag>,
-    poll: Option<Poll>,
 }
 
 #[derive(Debug)]
