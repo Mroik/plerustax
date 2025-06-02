@@ -22,5 +22,9 @@ async fn main() -> Result<()> {
     let password = buf.trim().to_string();
 
     backend.login(&username, &password).await?;
+
+    let tweets = backend.home_timeline(None).await?;
+    println!("{:?}", tweets);
+
     Ok(())
 }

@@ -99,11 +99,28 @@ impl Backend {
     }
 
     pub async fn home_timeline(&self, from_id: Option<&str>) -> Result<Vec<Tweet>> {
-        let mut req = self.http.get("{}/api/v1/timelines/home");
+        let mut req = self
+            .http
+            .get(format!("{}/api/v1/timelines/home", self.base_url));
         if from_id.is_some() {
             req = req.query(&[("since_id", from_id.unwrap())]);
         }
-        let res = req.send().await?;
+        let res = req
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.token.as_ref().unwrap()),
+            )
+            .send()
+            .await?;
+
+        if !res.status().is_success() {
+            return Err(anyhow!(
+                "Status: {}\nMessage: {}",
+                res.status().as_u16(),
+                res.text().await?
+            ));
+        }
+
         let data: Vec<Tweet> = res.json().await?;
         Ok(data)
     }

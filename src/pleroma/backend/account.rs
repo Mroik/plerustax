@@ -1,12 +1,12 @@
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct AccountField {
     name: String,
     value: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Account {
     id: String,
     acct: String,
@@ -14,7 +14,7 @@ pub struct Account {
     bot: bool,
     note: String,
     url: String,
-    follower_count: u32,
+    followers_count: u32,
     following_count: u32,
     statuses_count: u32,
     fields: Vec<AccountField>,
