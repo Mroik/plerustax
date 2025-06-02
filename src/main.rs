@@ -1,5 +1,26 @@
+use std::io::{Write, stdin, stdout};
+
+use anyhow::Result;
+use pleroma::backend::Backend;
+
 mod pleroma;
 
-fn main() {
-    println!("Hello, world!");
+#[tokio::main]
+async fn main() -> Result<()> {
+    let mut buf = String::new();
+    let mut backend = Backend::new("https://cawfee.club").await.unwrap();
+
+    print!("Username: ");
+    stdout().flush().unwrap();
+    stdin().read_line(&mut buf).unwrap();
+    let username = buf.trim().to_string();
+    buf.clear();
+
+    print!("Password: ");
+    stdout().flush().unwrap();
+    stdin().read_line(&mut buf).unwrap();
+    let password = buf.trim().to_string();
+
+    backend.login(&username, &password).await?;
+    Ok(())
 }
