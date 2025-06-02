@@ -4,7 +4,7 @@ use anyhow::{Result, anyhow};
 use reqwest::Client;
 use serde::Deserialize;
 
-use super::tweet::Tweet;
+use super::{account::Account, tweet::Tweet};
 
 #[derive(Deserialize, Debug)]
 struct CredentialApplication {
@@ -15,6 +15,12 @@ struct CredentialApplication {
 #[derive(Deserialize)]
 struct TokenResponse {
     access_token: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SearchResult {
+    accounts: Vec<Account>,
+    statuses: Vec<Tweet>,
 }
 
 #[derive(Debug)]
@@ -147,6 +153,40 @@ impl Api {
         }
 
         let data: Vec<Tweet> = res.json().await?;
+        Ok(data)
+    }
+
+    pub async fn search_tweets(
+        &self,
+        search_term: &str,
+        offset: Option<u32>,
+    ) -> Result<SearchResult> {
+        let mut queries = vec![("q", search_term)];
+        let offset_str = offset.as_ref().unwrap_or(&0).to_string();
+        if !offset.is_some() {
+            queries.push(("offset", &offset_str));
+        }
+        let mut req = self
+            .http
+            .get(format!("{}/api/v2/search", self.base_url))
+            .query(&queries);
+        let res = req
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.token.as_ref().unwrap()),
+            )
+            .send()
+            .await?;
+
+        if !res.status().is_success() {
+            return Err(anyhow!(
+                "Status: {}\nMessage: {}",
+                res.status().as_u16(),
+                res.text().await?
+            ));
+        }
+
+        let data: SearchResult = res.json().await?;
         Ok(data)
     }
 }
