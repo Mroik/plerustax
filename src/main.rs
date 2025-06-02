@@ -1,14 +1,14 @@
 use std::io::{Write, stdin, stdout};
 
 use anyhow::Result;
-use pleroma::backend::Backend;
+use pleroma::api::Api;
 
 mod pleroma;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut buf = String::new();
-    let mut backend = Backend::new("https://cawfee.club").await.unwrap();
+    let mut backend = Api::new("https://cawfee.club").await.unwrap();
 
     print!("Username: ");
     stdout().flush().unwrap();

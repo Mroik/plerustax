@@ -3,10 +3,8 @@ use std::collections::HashMap;
 use anyhow::{Result, anyhow};
 use reqwest::Client;
 use serde::Deserialize;
-use tweet::Tweet;
 
-mod account;
-mod tweet;
+use super::tweet::Tweet;
 
 #[derive(Deserialize, Debug)]
 struct CredentialApplication {
@@ -20,16 +18,16 @@ struct TokenResponse {
 }
 
 #[derive(Debug)]
-pub struct Backend {
+pub struct Api {
     base_url: String,
     http: Client,
     credentials: Option<CredentialApplication>,
     token: Option<String>,
 }
 
-impl Backend {
+impl Api {
     pub async fn new(base_url: &str) -> Result<Self> {
-        let mut ris = Backend {
+        let mut ris = Api {
             base_url: base_url.to_string(),
             http: Client::new(),
             credentials: None,
@@ -128,11 +126,11 @@ impl Backend {
 
 #[cfg(test)]
 mod test {
-    use super::Backend;
+    use super::Api;
 
     #[tokio::test]
     async fn new_backend() {
-        let b = Backend::new("https://cawfee.club").await.unwrap();
+        let b = Api::new("https://cawfee.club").await.unwrap();
         assert!(b.credentials.is_some());
     }
 }
