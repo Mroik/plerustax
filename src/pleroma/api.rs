@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use anyhow::{Result, anyhow};
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::{account::Account, tweet::Tweet};
 
@@ -98,7 +98,7 @@ impl Api {
         }
 
         let data: TokenResponse = res.json().await?;
-        self.token = Some(data.access_token.clone());
+        self.token = Some(data.access_token);
 
         Ok(())
     }
@@ -200,6 +200,26 @@ impl Api {
         params.insert("visibility", visibility);
 
         let res = req.json(&params).send().await?;
+        if !res.status().is_success() {
+            return Err(anyhow!(
+                "Status: {}\nMessage: {}",
+                res.status().as_u16(),
+                res.text().await?
+            ));
+        }
+        Ok(())
+    }
+
+    pub async fn delete_tweet(&self, id: &str) -> Result<()> {
+        let res = self
+            .http
+            .delete(format!("{}/api/v1/statuses/{}", self.base_url, id))
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.token.as_ref().unwrap()),
+            )
+            .send()
+            .await?;
         if !res.status().is_success() {
             return Err(anyhow!(
                 "Status: {}\nMessage: {}",

@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
 
     backend.login(&username, &password).await?;
 
-    backend.post_tweet("This was sent from plerustax", "public").await?;
+    backend.delete_tweet("redacted").await?;
 
     Ok(())
 }
