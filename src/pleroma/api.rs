@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use anyhow::{Result, anyhow};
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use super::{account::Account, tweet::Tweet};
 
@@ -80,6 +80,7 @@ impl Api {
         data.insert("grant_type", "password");
         data.insert("username", username);
         data.insert("password", password);
+        data.insert("scope", "read write");
 
         let res = self
             .http
@@ -105,17 +106,15 @@ impl Api {
     pub async fn home_timeline(&self, from_id: Option<&str>) -> Result<Vec<Tweet>> {
         let mut req = self
             .http
-            .get(format!("{}/api/v1/timelines/home", self.base_url));
-        if from_id.is_some() {
-            req = req.query(&[("since_id", from_id.unwrap())]);
-        }
-        let res = req
+            .get(format!("{}/api/v1/timelines/home", self.base_url))
             .header(
                 "Authorization",
                 format!("Bearer {}", self.token.as_ref().unwrap()),
-            )
-            .send()
-            .await?;
+            );
+        if from_id.is_some() {
+            req = req.query(&[("since_id", from_id.unwrap())]);
+        }
+        let res = req.send().await?;
 
         if !res.status().is_success() {
             return Err(anyhow!(
@@ -132,17 +131,15 @@ impl Api {
     pub async fn public_timeline(&self, from_id: Option<&str>) -> Result<Vec<Tweet>> {
         let mut req = self
             .http
-            .get(format!("{}/api/v1/timelines/public", self.base_url));
-        if from_id.is_some() {
-            req = req.query(&[("since_id", from_id.unwrap())]);
-        }
-        let res = req
+            .get(format!("{}/api/v1/timelines/public", self.base_url))
             .header(
                 "Authorization",
                 format!("Bearer {}", self.token.as_ref().unwrap()),
-            )
-            .send()
-            .await?;
+            );
+        if from_id.is_some() {
+            req = req.query(&[("since_id", from_id.unwrap())]);
+        }
+        let res = req.send().await?;
 
         if !res.status().is_success() {
             return Err(anyhow!(
@@ -166,17 +163,15 @@ impl Api {
         if !offset.is_some() {
             queries.push(("offset", &offset_str));
         }
-        let mut req = self
+        let req = self
             .http
             .get(format!("{}/api/v2/search", self.base_url))
-            .query(&queries);
-        let res = req
             .header(
                 "Authorization",
                 format!("Bearer {}", self.token.as_ref().unwrap()),
             )
-            .send()
-            .await?;
+            .query(&queries);
+        let res = req.send().await?;
 
         if !res.status().is_success() {
             return Err(anyhow!(
@@ -188,6 +183,31 @@ impl Api {
 
         let data: SearchResult = res.json().await?;
         Ok(data)
+    }
+
+    pub async fn post_tweet(&self, text: &str, visibility: &str) -> Result<()> {
+        let req = self
+            .http
+            .post(format!("{}/api/v1/statuses", self.base_url))
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.token.as_ref().unwrap()),
+            );
+        let mut params = HashMap::new();
+        params.insert("status", text);
+        params.insert("content_type", "text/plain");
+        params.insert("source", "plerustax");
+        params.insert("visibility", visibility);
+
+        let res = req.json(&params).send().await?;
+        if !res.status().is_success() {
+            return Err(anyhow!(
+                "Status: {}\nMessage: {}",
+                res.status().as_u16(),
+                res.text().await?
+            ));
+        }
+        Ok(())
     }
 }
 

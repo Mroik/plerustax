@@ -23,8 +23,7 @@ async fn main() -> Result<()> {
 
     backend.login(&username, &password).await?;
 
-    let tweets = backend.home_timeline(None).await?;
-    println!("{:?}", tweets);
+    backend.post_tweet("This was sent from plerustax", "public").await?;
 
     Ok(())
 }
