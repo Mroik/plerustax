@@ -1,3 +1,3 @@
 mod account;
 pub mod api;
-mod tweet;
+pub mod tweet;

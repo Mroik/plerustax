@@ -3,6 +3,7 @@ use std::io::{Write, stdin, stdout};
 use anyhow::Result;
 use pleroma::api::Api;
 
+mod app;
 mod pleroma;
 
 #[tokio::main]
@@ -23,7 +24,8 @@ async fn main() -> Result<()> {
 
     backend.login(&username, &password).await?;
 
-    backend.delete_tweet("redacted").await?;
+    let a = backend.public_timeline(None).await?;
+    println!("{:?}", a);
 
     Ok(())
 }
