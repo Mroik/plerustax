@@ -4,6 +4,8 @@ use anyhow::{Result, anyhow};
 use reqwest::Client;
 use serde::Deserialize;
 
+use crate::app::backend::Backend;
+
 use super::{account::Account, tweet::Tweet};
 
 #[derive(Deserialize, Debug)]
@@ -228,6 +230,10 @@ impl Api {
             ));
         }
         Ok(())
+    }
+
+    pub async fn backend(self) -> Backend {
+        Backend::new(self).await
     }
 }
 

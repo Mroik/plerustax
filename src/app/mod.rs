@@ -4,7 +4,7 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
 use crate::pleroma::tweet::Tweet;
 
-mod backend;
+pub mod backend;
 mod message;
 mod state;
 
@@ -34,6 +34,19 @@ impl App {
             backend_chan: None,
             recv_end,
             send_end,
+        }
+    }
+
+    async fn start(&mut self) {
+        while let Some(m) = self.recv_end.recv().await {
+            match m {
+                Message::GetHomeTimelineResponse(res) => match res {
+                    Ok(data) => self.timelines.home.extend(data),
+                    // TODO Display error on the frontend
+                    Err(_) => todo!(),
+                },
+                _ => (),
+            }
         }
     }
 }
