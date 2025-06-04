@@ -1,7 +1,9 @@
 use std::io::{Write, stdin, stdout};
 
 use anyhow::Result;
+use app::App;
 use pleroma::api::Api;
+use tokio::spawn;
 
 mod app;
 mod pleroma;
@@ -9,7 +11,7 @@ mod pleroma;
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut buf = String::new();
-    let mut backend = Api::new("https://cawfee.club").await.unwrap();
+    let mut api = Api::new("https://cawfee.club").await.unwrap();
 
     print!("Username: ");
     stdout().flush().unwrap();
@@ -22,10 +24,19 @@ async fn main() -> Result<()> {
     stdin().read_line(&mut buf).unwrap();
     let password = buf.trim().to_string();
 
-    backend.login(&username, &password).await?;
+    api.login(&username, &password).await?;
 
-    let a = backend.public_timeline(None).await?;
-    println!("{:?}", a);
+    let mut backend = api.backend().await;
+    let mut app = App::new().await;
+    backend.register_app(app.send_end.clone()).await;
+    app.register_backend(backend.send_end.clone()).await;
+
+    drop(buf);
+    drop(username);
+    drop(password);
+
+    spawn(async move { backend.start().await });
+    spawn(async move { app.start().await });
 
     Ok(())
 }

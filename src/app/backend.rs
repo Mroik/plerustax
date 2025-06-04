@@ -9,7 +9,7 @@ pub struct Backend {
     api: Api,
     app_chan: Option<UnboundedSender<Message>>,
     recv_end: UnboundedReceiver<Message>,
-    send_end: UnboundedSender<Message>,
+    pub send_end: UnboundedSender<Message>,
 }
 
 impl Backend {
@@ -23,7 +23,7 @@ impl Backend {
         }
     }
 
-    async fn start(&mut self) -> Result<()> {
+    pub async fn start(&mut self) -> Result<()> {
         while let Some(m) = self.recv_end.recv().await {
             match m {
                 Message::GetHomeTimeline(id) => {
@@ -37,5 +37,9 @@ impl Backend {
             }
         }
         Ok(())
+    }
+
+    pub async fn register_app(&mut self, app: UnboundedSender<Message>) {
+        self.app_chan = Some(app);
     }
 }

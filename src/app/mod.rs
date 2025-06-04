@@ -17,16 +17,16 @@ struct Timelines {
     known_network: Vec<Tweet>,
 }
 
-struct App {
+pub struct App {
     timelines: Timelines,
     state: Vec<State>,
     backend_chan: Option<UnboundedSender<Message>>,
     recv_end: UnboundedReceiver<Message>,
-    send_end: UnboundedSender<Message>,
+    pub send_end: UnboundedSender<Message>,
 }
 
 impl App {
-    async fn new() -> Self {
+    pub async fn new() -> Self {
         let (send_end, recv_end) = unbounded_channel();
         App {
             timelines: Timelines::default(),
@@ -37,7 +37,7 @@ impl App {
         }
     }
 
-    async fn start(&mut self) {
+    pub async fn start(&mut self) {
         while let Some(m) = self.recv_end.recv().await {
             match m {
                 Message::GetHomeTimelineResponse(res) => match res {
@@ -48,5 +48,9 @@ impl App {
                 _ => (),
             }
         }
+    }
+
+    pub async fn register_backend(&mut self, backend: UnboundedSender<Message>) {
+        self.backend_chan = Some(backend);
     }
 }
