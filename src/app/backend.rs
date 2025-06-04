@@ -33,6 +33,20 @@ impl Backend {
                         .unwrap()
                         .send(Message::GetHomeTimelineResponse(res))?;
                 }
+                Message::GetPublicTimeline(id) => {
+                    let res = self.api.public_timeline(id.clone().as_deref()).await;
+                    self.app_chan
+                        .as_ref()
+                        .unwrap()
+                        .send(Message::GetPublicTimelineResponse(res))?;
+                }
+                Message::GetLocalTimeline(id) => {
+                    let res = self.api.local_timeline(id.clone().as_deref()).await;
+                    self.app_chan
+                        .as_ref()
+                        .unwrap()
+                        .send(Message::GetLocalTimelineResponse(res))?;
+                }
                 _ => (),
             }
         }

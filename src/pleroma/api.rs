@@ -130,6 +130,32 @@ impl Api {
         Ok(data)
     }
 
+    pub async fn local_timeline(&self, from_id: Option<&str>) -> Result<Vec<Tweet>> {
+        let req = self
+            .http
+            .get(format!("{}/api/v1/timelines/public", self.base_url))
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.token.as_ref().unwrap()),
+            );
+        let mut q = vec![("local", "true")];
+        if from_id.is_some() {
+            q.push(("since_id", from_id.unwrap()));
+        }
+        let res = req.query(&q).send().await?;
+
+        if !res.status().is_success() {
+            return Err(anyhow!(
+                "Status: {}\nMessage: {}",
+                res.status().as_u16(),
+                res.text().await?
+            ));
+        }
+
+        let data: Vec<Tweet> = res.json().await?;
+        Ok(data)
+    }
+
     pub async fn public_timeline(&self, from_id: Option<&str>) -> Result<Vec<Tweet>> {
         let mut req = self
             .http

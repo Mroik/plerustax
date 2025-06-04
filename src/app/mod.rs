@@ -12,9 +12,9 @@ mod state;
 struct Timelines {
     home: Vec<Tweet>,
     // Just your instance
-    public: Vec<Tweet>,
+    local: Vec<Tweet>,
     // Everywhere
-    known_network: Vec<Tweet>,
+    public: Vec<Tweet>,
 }
 
 pub struct App {
@@ -43,6 +43,14 @@ impl App {
                 Message::GetHomeTimelineResponse(res) => match res {
                     Ok(data) => self.timelines.home.extend(data),
                     // TODO Display error on the frontend
+                    Err(_) => todo!(),
+                },
+                Message::GetPublicTimelineResponse(res) => match res {
+                    Ok(data) => self.timelines.public.extend(data),
+                    Err(_) => todo!(),
+                },
+                Message::GetLocalTimelineResponse(res) => match res {
+                    Ok(data) => self.timelines.local.extend(data),
                     Err(_) => todo!(),
                 },
                 _ => (),
