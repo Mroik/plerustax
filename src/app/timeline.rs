@@ -7,7 +7,7 @@ use ratatui::{
 
 use crate::pleroma::tweet::Tweet;
 
-struct TimelineTweetWidget<'a> {
+pub struct TimelineTweetWidget<'a> {
     tweet: &'a Tweet,
 }
 
@@ -50,7 +50,7 @@ impl Widget for TimelineTweetWidget<'_> {
             Style::default(),
         );
 
-        let spacing: String = (0..(area.width - 6) / 5).map(|_| ' ').collect();
+        let spacing: String = (0..(area.width - 6) / 4).map(|_| ' ').collect();
         let buttons = [
             Span::default().content(&spacing),
             Span::default().content(format!("\u{21b5}{}", self.tweet.replies_count)),
@@ -83,13 +83,13 @@ impl Widget for TimelineTweetWidget<'_> {
     }
 }
 
-struct TimelineWidget<'a> {
+pub struct TimelineWidget<'a> {
     tweets: Vec<&'a Tweet>,
     i: usize,
 }
 
 impl<'a> TimelineWidget<'a> {
-    async fn new(i: usize, tweets: Vec<&'a Tweet>) -> Self {
+    pub fn new(i: usize, tweets: Vec<&'a Tweet>) -> Self {
         TimelineWidget { tweets, i }
     }
 }

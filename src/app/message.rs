@@ -9,4 +9,5 @@ pub enum Message {
     GetPublicTimelineResponse(Result<Vec<Tweet>>),
     GetLocalTimeline(Option<String>),
     GetLocalTimelineResponse(Result<Vec<Tweet>>),
+    Tick,
 }

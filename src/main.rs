@@ -1,17 +1,25 @@
-use std::io::{Write, stdin, stdout};
+use std::{
+    io::{Write, stdin, stdout},
+    time::Duration,
+};
 
 use anyhow::Result;
-use app::App;
+use app::{App, message::Message};
+use cli_log::{info, init_cli_log};
 use pleroma::api::Api;
-use tokio::spawn;
+use tokio::{sync::mpsc::UnboundedSender, task::JoinSet, time::sleep};
 
 mod app;
 mod pleroma;
 
+const TICK_RATE: u64 = 1000 / 25;
+const INSTANCE: &str = "https://cawfee.club";
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    init_cli_log!();
     let mut buf = String::new();
-    let mut api = Api::new("https://cawfee.club").await.unwrap();
+    let mut api = Api::new(INSTANCE).await.unwrap();
 
     print!("Username: ");
     stdout().flush().unwrap();
@@ -27,7 +35,7 @@ async fn main() -> Result<()> {
     api.login(&username, &password).await?;
 
     let mut backend = api.backend().await;
-    let mut app = App::new().await;
+    let mut app = App::new(INSTANCE).await;
     backend.register_app(app.send_end.clone()).await;
     app.register_backend(backend.send_end.clone()).await;
 
@@ -35,8 +43,28 @@ async fn main() -> Result<()> {
     drop(username);
     drop(password);
 
-    spawn(async move { backend.start().await });
-    spawn(async move { app.start().await });
+    let mut threads = JoinSet::new();
 
+    info!("Before threading");
+    let tick_app = app.send_end.clone();
+    threads.spawn(async move { backend.start().await });
+    threads.spawn(async move { app.start().await });
+    info!("Before tick");
+    threads.spawn(async move { start_tick_generator(tick_app).await });
+
+    threads.join_all().await;
+
+    Ok(())
+}
+
+async fn start_tick_generator(app: UnboundedSender<Message>) -> Result<()> {
+    info!("Starting tick generator");
+    loop {
+        if app.send(Message::Tick).is_err() {
+            info!("Breaking");
+            break;
+        }
+        sleep(Duration::from_millis(TICK_RATE)).await;
+    }
     Ok(())
 }

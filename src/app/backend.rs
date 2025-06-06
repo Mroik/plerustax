@@ -1,4 +1,5 @@
 use anyhow::Result;
+use cli_log::info;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 use crate::pleroma::api::Api;
@@ -24,6 +25,7 @@ impl Backend {
     }
 
     pub async fn start(&mut self) -> Result<()> {
+        info!("Starting backend");
         while let Some(m) = self.recv_end.recv().await {
             match m {
                 Message::GetHomeTimeline(id) => {

@@ -1,5 +1,5 @@
 pub enum State {
-    Timeline(Timeline),
+    Timeline(Timeline, usize),
 }
 
 pub enum Timeline {
