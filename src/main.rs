@@ -5,6 +5,7 @@ use std::{
 
 use anyhow::Result;
 use app::{App, message::Message};
+use cli_log::init_cli_log;
 use pleroma::api::Api;
 use tokio::{sync::mpsc::UnboundedSender, task::JoinSet, time::sleep};
 
@@ -16,6 +17,7 @@ const INSTANCE: &str = "https://cawfee.club";
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    init_cli_log!();
     let mut buf = String::new();
     let mut api = Api::new(INSTANCE).await.unwrap();
 
@@ -54,10 +56,8 @@ async fn main() -> Result<()> {
 }
 
 async fn start_tick_generator(app: UnboundedSender<Message>) -> Result<()> {
-    loop {
-        if app.send(Message::Tick).is_err() {
-            break;
-        }
+    while !app.is_closed() {
+        app.send(Message::Tick)?;
         sleep(Duration::from_millis(TICK_RATE)).await;
     }
     Ok(())

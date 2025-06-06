@@ -1,4 +1,5 @@
 use anyhow::Result;
+use ratatui::crossterm::event::Event;
 
 use crate::pleroma::tweet::Tweet;
 
@@ -10,4 +11,5 @@ pub enum Message {
     GetLocalTimeline(Option<String>),
     GetLocalTimelineResponse(Result<Vec<Tweet>>),
     Tick,
+    Input(Event),
 }

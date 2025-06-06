@@ -1,6 +1,8 @@
 use std::io::Stdout;
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
+use cli_log::info;
+use input::{handle_input, input_generator};
 use message::Message;
 use ratatui::{
     Terminal,
@@ -9,11 +11,15 @@ use ratatui::{
 };
 use state::{State, Timeline};
 use timeline::TimelineWidget;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
+use tokio::{
+    select,
+    sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel},
+};
 
 use crate::pleroma::tweet::Tweet;
 
 pub mod backend;
+pub mod input;
 pub mod message;
 mod state;
 mod timeline;
@@ -31,7 +37,7 @@ pub struct App {
     timelines: Timelines,
     state: State,
     backend_chan: Option<UnboundedSender<Message>>,
-    recv_end: UnboundedReceiver<Message>,
+    pub recv_end: UnboundedReceiver<Message>,
     pub send_end: UnboundedSender<Message>,
     terminal: Terminal<CrosstermBackend<Stdout>>,
     instance: String,
@@ -51,14 +57,8 @@ impl App {
         }
     }
 
-    pub async fn start(&mut self) -> Result<()> {
-        self.backend_chan
-            .as_ref()
-            .unwrap()
-            .send(Message::GetHomeTimeline(None))
-            .unwrap();
-
-        while let Some(m) = self.recv_end.recv().await {
+    async fn handle_events(&mut self) -> Result<()> {
+        if let Some(m) = self.recv_end.recv().await {
             match m {
                 Message::GetHomeTimelineResponse(res) => match res {
                     Ok(data) => self.timelines.home.extend(data),
@@ -92,9 +92,33 @@ impl App {
                         })
                         .unwrap();
                 }
+                Message::Input(e) => {
+                    info!("Receive input");
+                    handle_input(self, e).await?;
+                }
                 _ => (),
             }
+        } else {
+            return Err(anyhow!("Channel was closed"));
         }
+        Ok(())
+    }
+
+    pub async fn start(&mut self) -> Result<()> {
+        self.backend_chan
+            .as_ref()
+            .unwrap()
+            .send(Message::GetHomeTimeline(None))
+            .unwrap();
+
+        while !self.recv_end.is_closed() {
+            let input_gen_sender = self.send_end.clone();
+            select! {
+                _ = self.handle_events() => (),
+                _ = input_generator(input_gen_sender) => (),
+            }
+        }
+        ratatui::restore();
         Ok(())
     }
 

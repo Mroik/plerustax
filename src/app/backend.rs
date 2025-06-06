@@ -24,8 +24,12 @@ impl Backend {
     }
 
     pub async fn start(&mut self) -> Result<()> {
-        while let Some(m) = self.recv_end.recv().await {
-            match m {
+        while !self.app_chan.as_ref().unwrap().is_closed() {
+            let message = self.recv_end.recv().await;
+            if message.is_none() {
+                break;
+            }
+            match message.unwrap() {
                 Message::GetHomeTimeline(id) => {
                     let res = self.api.home_timeline(id.clone().as_deref()).await;
                     self.app_chan
