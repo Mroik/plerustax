@@ -8,14 +8,14 @@ pub struct AccountField {
 
 #[derive(Deserialize, Debug)]
 pub struct Account {
-    id: String,
-    acct: String,
-    display_name: String,
-    bot: bool,
-    note: String,
-    url: String,
-    followers_count: u32,
-    following_count: u32,
-    statuses_count: u32,
-    fields: Vec<AccountField>,
+    pub id: String,
+    pub acct: String,
+    pub display_name: String,
+    pub bot: bool,
+    pub note: String,
+    pub url: String,
+    pub followers_count: u32,
+    pub following_count: u32,
+    pub statuses_count: u32,
+    pub fields: Vec<AccountField>,
 }

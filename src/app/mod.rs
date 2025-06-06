@@ -7,6 +7,7 @@ use crate::pleroma::tweet::Tweet;
 pub mod backend;
 mod message;
 mod state;
+mod timeline;
 
 #[derive(Default)]
 struct Timelines {
