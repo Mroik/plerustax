@@ -1,7 +1,6 @@
 use std::io::Stdout;
 
 use anyhow::Result;
-use cli_log::info;
 use message::Message;
 use ratatui::{
     Terminal,
@@ -53,7 +52,6 @@ impl App {
     }
 
     pub async fn start(&mut self) -> Result<()> {
-        info!("Starting app");
         self.backend_chan
             .as_ref()
             .unwrap()
@@ -65,10 +63,7 @@ impl App {
                 Message::GetHomeTimelineResponse(res) => match res {
                     Ok(data) => self.timelines.home.extend(data),
                     // TODO Display error on the frontend
-                    Err(_) => {
-                        info!("Errore Home Timeline");
-                        todo!();
-                    }
+                    Err(_) => todo!(),
                 },
                 Message::GetPublicTimelineResponse(res) => match res {
                     Ok(data) => self.timelines.public.extend(data),
@@ -79,7 +74,6 @@ impl App {
                     Err(_) => todo!(),
                 },
                 Message::Tick => {
-                    info!("Drawing");
                     // TODO Error handling
                     self.terminal
                         .draw(|frame| match &self.state {

@@ -5,7 +5,6 @@ use std::{
 
 use anyhow::Result;
 use app::{App, message::Message};
-use cli_log::{info, init_cli_log};
 use pleroma::api::Api;
 use tokio::{sync::mpsc::UnboundedSender, task::JoinSet, time::sleep};
 
@@ -17,7 +16,6 @@ const INSTANCE: &str = "https://cawfee.club";
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    init_cli_log!();
     let mut buf = String::new();
     let mut api = Api::new(INSTANCE).await.unwrap();
 
@@ -45,11 +43,9 @@ async fn main() -> Result<()> {
 
     let mut threads = JoinSet::new();
 
-    info!("Before threading");
     let tick_app = app.send_end.clone();
     threads.spawn(async move { backend.start().await });
     threads.spawn(async move { app.start().await });
-    info!("Before tick");
     threads.spawn(async move { start_tick_generator(tick_app).await });
 
     threads.join_all().await;
@@ -58,10 +54,8 @@ async fn main() -> Result<()> {
 }
 
 async fn start_tick_generator(app: UnboundedSender<Message>) -> Result<()> {
-    info!("Starting tick generator");
     loop {
         if app.send(Message::Tick).is_err() {
-            info!("Breaking");
             break;
         }
         sleep(Duration::from_millis(TICK_RATE)).await;
