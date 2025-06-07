@@ -14,11 +14,14 @@ use super::{
 };
 
 pub async fn input_generator(app: Sender<Message>) -> Result<()> {
-    if poll(Duration::from_millis(TICK_RATE))? {
-        let event = event::read()?;
-        info!("Sending event");
-        info!("{:?}", event);
-        app.send(Message::Input(event)).await?;
+    while !app.is_closed() {
+        async {}.await;
+        if poll(Duration::from_millis(TICK_RATE))? {
+            let event = event::read()?;
+            info!("Sending event");
+            info!("{:?}", event);
+            app.send(Message::Input(event)).await?;
+        }
     }
     Ok(())
 }
@@ -30,7 +33,6 @@ pub async fn handle_input(app: &mut App, event: Event) -> Result<()> {
             (KeyCode::Char('c'), KeyModifiers::CONTROL) => {
                 info!("CTRL-C");
                 app.recv_end.close();
-                while let Some(_) = app.recv_end.recv().await {}
                 return Ok(());
             }
             (_, _) => (),

@@ -14,7 +14,7 @@ pub struct Backend {
 
 impl Backend {
     pub async fn new(api: Api) -> Self {
-        let (send_end, recv_end) = channel(64);
+        let (send_end, recv_end) = channel(10);
         Backend {
             api,
             app_chan: None,

@@ -4,7 +4,7 @@ use std::{
 };
 
 use anyhow::Result;
-use app::{App, message::Message};
+use app::{App, input::input_generator, message::Message};
 use cli_log::init_cli_log;
 use pleroma::api::Api;
 use tokio::{sync::mpsc::Sender, task::JoinSet, time::sleep};
@@ -12,7 +12,8 @@ use tokio::{sync::mpsc::Sender, task::JoinSet, time::sleep};
 mod app;
 mod pleroma;
 
-const TICK_RATE: u64 = 1000 / 25;
+const RENDER_SPEED: u64 = 1000 / 25;
+const TICK_RATE: u64 = 1000 / 60;
 const INSTANCE: &str = "https://cawfee.club";
 
 #[tokio::main]
@@ -46,9 +47,11 @@ async fn main() -> Result<()> {
     let mut threads = JoinSet::new();
 
     let tick_app = app.send_end.clone();
+    let input_app = app.send_end.clone();
     threads.spawn(async move { backend.start().await });
     threads.spawn(async move { app.start().await });
-    threads.spawn(async move { start_tick_generator(tick_app).await });
+    threads.spawn(start_tick_generator(tick_app));
+    threads.spawn(input_generator(input_app));
 
     threads.join_all().await;
 
@@ -57,8 +60,8 @@ async fn main() -> Result<()> {
 
 async fn start_tick_generator(app: Sender<Message>) -> Result<()> {
     while !app.is_closed() {
+        sleep(Duration::from_millis(RENDER_SPEED)).await;
         app.send(Message::Tick).await?;
-        sleep(Duration::from_millis(TICK_RATE)).await;
     }
     Ok(())
 }
