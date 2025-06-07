@@ -1,5 +1,5 @@
 use anyhow::Result;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::{Receiver, Sender, channel};
 
 use crate::pleroma::api::Api;
 
@@ -7,14 +7,14 @@ use super::message::Message;
 
 pub struct Backend {
     api: Api,
-    app_chan: Option<UnboundedSender<Message>>,
-    recv_end: UnboundedReceiver<Message>,
-    pub send_end: UnboundedSender<Message>,
+    app_chan: Option<Sender<Message>>,
+    recv_end: Receiver<Message>,
+    pub send_end: Sender<Message>,
 }
 
 impl Backend {
     pub async fn new(api: Api) -> Self {
-        let (send_end, recv_end) = tokio::sync::mpsc::unbounded_channel();
+        let (send_end, recv_end) = channel(64);
         Backend {
             api,
             app_chan: None,
@@ -35,21 +35,24 @@ impl Backend {
                     self.app_chan
                         .as_ref()
                         .unwrap()
-                        .send(Message::GetHomeTimelineResponse(res))?;
+                        .send(Message::GetHomeTimelineResponse(res))
+                        .await?;
                 }
                 Message::GetPublicTimeline(id) => {
                     let res = self.api.public_timeline(id.clone().as_deref()).await;
                     self.app_chan
                         .as_ref()
                         .unwrap()
-                        .send(Message::GetPublicTimelineResponse(res))?;
+                        .send(Message::GetPublicTimelineResponse(res))
+                        .await?;
                 }
                 Message::GetLocalTimeline(id) => {
                     let res = self.api.local_timeline(id.clone().as_deref()).await;
                     self.app_chan
                         .as_ref()
                         .unwrap()
-                        .send(Message::GetLocalTimelineResponse(res))?;
+                        .send(Message::GetLocalTimelineResponse(res))
+                        .await?;
                 }
                 _ => (),
             }
@@ -57,7 +60,7 @@ impl Backend {
         Ok(())
     }
 
-    pub async fn register_app(&mut self, app: UnboundedSender<Message>) {
+    pub async fn register_app(&mut self, app: Sender<Message>) {
         self.app_chan = Some(app);
     }
 }

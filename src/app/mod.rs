@@ -13,7 +13,7 @@ use state::{State, Timeline};
 use timeline::TimelineWidget;
 use tokio::{
     select,
-    sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel},
+    sync::mpsc::{Receiver, Sender, channel},
 };
 
 use crate::pleroma::tweet::Tweet;
@@ -36,16 +36,17 @@ struct Timelines {
 pub struct App {
     timelines: Timelines,
     state: State,
-    backend_chan: Option<UnboundedSender<Message>>,
-    pub recv_end: UnboundedReceiver<Message>,
-    pub send_end: UnboundedSender<Message>,
+    backend_chan: Option<Sender<Message>>,
+    pub recv_end: Receiver<Message>,
+    pub send_end: Sender<Message>,
     terminal: Terminal<CrosstermBackend<Stdout>>,
     instance: String,
+    should_render: bool,
 }
 
 impl App {
     pub async fn new(instance: &str) -> Self {
-        let (send_end, recv_end) = unbounded_channel();
+        let (send_end, recv_end) = channel(64);
         App {
             timelines: Timelines::default(),
             state: State::Timeline(Timeline::Home, 0),
@@ -54,11 +55,16 @@ impl App {
             send_end,
             terminal: ratatui::init(),
             instance: instance.to_string(),
+            should_render: true,
         }
     }
 
     async fn handle_events(&mut self) -> Result<()> {
         if let Some(m) = self.recv_end.recv().await {
+            let should_render = match m {
+                Message::Tick => false,
+                _ => true,
+            };
             match m {
                 Message::GetHomeTimelineResponse(res) => match res {
                     Ok(data) => self.timelines.home.extend(data),
@@ -73,7 +79,7 @@ impl App {
                     Ok(data) => self.timelines.local.extend(data),
                     Err(_) => todo!(),
                 },
-                Message::Tick => {
+                Message::Tick if self.should_render => {
                     // TODO Error handling
                     self.terminal
                         .draw(|frame| match &self.state {
@@ -98,6 +104,7 @@ impl App {
                 }
                 _ => (),
             }
+            self.should_render = should_render;
         } else {
             return Err(anyhow!("Channel was closed"));
         }
@@ -109,7 +116,7 @@ impl App {
             .as_ref()
             .unwrap()
             .send(Message::GetHomeTimeline(None))
-            .unwrap();
+            .await?;
 
         while !self.recv_end.is_closed() {
             let input_gen_sender = self.send_end.clone();
@@ -122,7 +129,7 @@ impl App {
         Ok(())
     }
 
-    pub async fn register_backend(&mut self, backend: UnboundedSender<Message>) {
+    pub async fn register_backend(&mut self, backend: Sender<Message>) {
         self.backend_chan = Some(backend);
     }
 }

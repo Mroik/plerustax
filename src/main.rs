@@ -7,7 +7,7 @@ use anyhow::Result;
 use app::{App, message::Message};
 use cli_log::init_cli_log;
 use pleroma::api::Api;
-use tokio::{sync::mpsc::UnboundedSender, task::JoinSet, time::sleep};
+use tokio::{sync::mpsc::Sender, task::JoinSet, time::sleep};
 
 mod app;
 mod pleroma;
@@ -55,9 +55,9 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn start_tick_generator(app: UnboundedSender<Message>) -> Result<()> {
+async fn start_tick_generator(app: Sender<Message>) -> Result<()> {
     while !app.is_closed() {
-        app.send(Message::Tick)?;
+        app.send(Message::Tick).await?;
         sleep(Duration::from_millis(TICK_RATE)).await;
     }
     Ok(())

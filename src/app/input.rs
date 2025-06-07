@@ -3,7 +3,7 @@ use std::time::Duration;
 use anyhow::Result;
 use cli_log::info;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyModifiers, poll};
-use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::Sender;
 
 use crate::TICK_RATE;
 
@@ -13,12 +13,12 @@ use super::{
     state::{State, Timeline},
 };
 
-pub async fn input_generator(app: UnboundedSender<Message>) -> Result<()> {
+pub async fn input_generator(app: Sender<Message>) -> Result<()> {
     if poll(Duration::from_millis(TICK_RATE))? {
         let event = event::read()?;
         info!("Sending event");
         info!("{:?}", event);
-        app.send(Message::Input(event))?;
+        app.send(Message::Input(event)).await?;
     }
     Ok(())
 }
