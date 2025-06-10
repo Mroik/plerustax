@@ -1,12 +1,7 @@
 use crossterm::style::Color;
 
-pub enum PreparedPixel {
-    Pixel(Pixel),
-    Spaces(u16),
-    NewLine(u16),
-}
-
 /// A character on the terminal
+#[derive(Clone)]
 pub struct Pixel {
     pub char: char,
     pub x: u16,
