@@ -1,8 +1,8 @@
-use std::io::stdout;
+use std::io::{Stdout, stdout};
 
 use anyhow::Result;
 use crossterm::{
-    Command,
+    ExecutableCommand, QueueableCommand,
     style::{Color, PrintStyledContent, Stylize},
     terminal::{
         BeginSynchronizedUpdate, EndSynchronizedUpdate, EnterAlternateScreen, LeaveAlternateScreen,
@@ -20,14 +20,17 @@ struct Frame<'a> {
 /// and reverts to the original screen.
 struct Terminal {
     frame_pixels: Vec<Pixel>,
+    output: Stdout,
 }
 
 impl Terminal {
     pub fn new() -> Result<Self> {
-        execute(EnterAlternateScreen)?;
+        let mut output = stdout();
+        output.execute(EnterAlternateScreen)?;
         crossterm::terminal::enable_raw_mode()?;
         Ok(Terminal {
             frame_pixels: Vec::new(),
+            output,
         })
     }
 
@@ -48,7 +51,7 @@ impl Terminal {
     {
         let mut f = self.frame();
         callback(&mut f);
-        let _ = execute(BeginSynchronizedUpdate);
+        let _ = self.output.execute(BeginSynchronizedUpdate);
 
         // Could move this code to Frame's drop, that way
         // the draw method wouldn't be needed and the error
@@ -82,19 +85,19 @@ impl Terminal {
                         Color::Grey => cont.grey(),
                         _ => unreachable!(),
                     };
-                    let _ = queue(PrintStyledContent(cont));
+                    let _ = self.output.queue(PrintStyledContent(cont));
                 }
                 PreparedPixel::Spaces(n) => {
                     let spaces = (0..*n).map(|_| ' ').collect::<String>();
-                    let _ = queue(crossterm::style::Print(spaces));
+                    let _ = self.output.queue(crossterm::style::Print(spaces));
                 }
                 PreparedPixel::NewLine(n) => {
                     let lines = (0..*n).map(|_| '\n').collect::<String>();
-                    let _ = queue(crossterm::style::Print(lines));
+                    let _ = self.output.queue(crossterm::style::Print(lines));
                 }
             });
 
-        let _ = execute(EndSynchronizedUpdate);
+        let _ = self.output.execute(EndSynchronizedUpdate);
         self.frame_pixels.clear();
     }
 }
@@ -104,14 +107,6 @@ impl Drop for Terminal {
         // This looks horrible but I don't think there's a way to
         // deal with failing drops in a clean way.
         let _ = crossterm::terminal::disable_raw_mode();
-        let _ = execute(LeaveAlternateScreen);
+        let _ = self.output.execute(LeaveAlternateScreen);
     }
-}
-
-fn execute(command: impl Command) -> Result<()> {
-    Ok(crossterm::execute!(stdout(), command)?)
-}
-
-fn queue(command: impl Command) -> Result<()> {
-    Ok(crossterm::queue!(stdout(), command)?)
 }
