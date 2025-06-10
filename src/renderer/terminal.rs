@@ -3,7 +3,7 @@ use std::io::{Stdout, stdout};
 use anyhow::Result;
 use crossterm::{
     ExecutableCommand, QueueableCommand,
-    style::{Color, PrintStyledContent, Stylize},
+    style::{PrintStyledContent, Stylize},
     terminal::{
         BeginSynchronizedUpdate, EndSynchronizedUpdate, EnterAlternateScreen, LeaveAlternateScreen,
     },
@@ -60,32 +60,9 @@ impl Terminal {
             .iter()
             .for_each(|pix| match pix {
                 PreparedPixel::Pixel(pixel) => {
-                    let mut cont = pixel.char.stylize();
-                    cont = match pixel.fg {
-                        Color::Black => cont.black(),
-                        Color::Red => cont.red(),
-                        Color::Green => cont.green(),
-                        Color::Yellow => cont.yellow(),
-                        Color::Blue => cont.blue(),
-                        Color::Magenta => cont.magenta(),
-                        Color::Cyan => cont.cyan(),
-                        Color::White => cont.white(),
-                        Color::Grey => cont.grey(),
-                        _ => unreachable!(),
-                    };
-                    cont = match pixel.fg {
-                        Color::Black => cont.black(),
-                        Color::Red => cont.red(),
-                        Color::Green => cont.green(),
-                        Color::Yellow => cont.yellow(),
-                        Color::Blue => cont.blue(),
-                        Color::Magenta => cont.magenta(),
-                        Color::Cyan => cont.cyan(),
-                        Color::White => cont.white(),
-                        Color::Grey => cont.grey(),
-                        _ => unreachable!(),
-                    };
-                    let _ = self.output.queue(PrintStyledContent(cont));
+                    let _ = self.output.queue(PrintStyledContent(
+                        pixel.char.stylize().with(pixel.fg).on(pixel.bg),
+                    ));
                 }
                 PreparedPixel::Spaces(n) => {
                     let spaces = (0..*n).map(|_| ' ').collect::<String>();
