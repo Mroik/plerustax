@@ -11,6 +11,7 @@ use tokio::{sync::mpsc::Sender, task::JoinSet, time::sleep};
 
 mod app;
 mod pleroma;
+mod renderer;
 
 const RENDER_SPEED: u64 = 1000 / 25;
 const TICK_RATE: u64 = 1000 / 60;
