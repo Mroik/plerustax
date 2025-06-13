@@ -1,2 +1,2 @@
-mod terminal;
+pub mod terminal;
 mod utils;

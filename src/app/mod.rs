@@ -1,19 +1,11 @@
-use std::io::Stdout;
-
 use anyhow::{Result, anyhow};
 use cli_log::info;
 use input::handle_input;
 use message::Message;
-use ratatui::{
-    Terminal,
-    prelude::CrosstermBackend,
-    widgets::{Block, Borders},
-};
 use state::{State, Timeline};
-use timeline::TimelineWidget;
 use tokio::sync::mpsc::{Receiver, Sender, channel};
 
-use crate::pleroma::tweet::Tweet;
+use crate::{pleroma::tweet::Tweet, renderer::terminal::Terminal};
 
 pub mod backend;
 pub mod input;
@@ -36,24 +28,24 @@ pub struct App {
     backend_chan: Option<Sender<Message>>,
     pub recv_end: Receiver<Message>,
     pub send_end: Sender<Message>,
-    terminal: Terminal<CrosstermBackend<Stdout>>,
+    terminal: Terminal,
     instance: String,
     should_render: bool,
 }
 
 impl App {
-    pub async fn new(instance: &str) -> Self {
+    pub async fn new(instance: &str) -> Result<Self> {
         let (send_end, recv_end) = channel(10);
-        App {
+        Ok(App {
             timelines: Timelines::default(),
             state: State::Timeline(Timeline::Home, 0),
             backend_chan: None,
             recv_end,
             send_end,
-            terminal: ratatui::init(),
+            terminal: Terminal::new()?,
             instance: instance.to_string(),
             should_render: true,
-        }
+        })
     }
 
     pub async fn start(&mut self) -> Result<()> {
@@ -84,26 +76,8 @@ impl App {
                         Err(_) => todo!(),
                     },
                     Message::Tick if self.should_render => {
-                        // TODO Error handling
                         if self.should_render {
-                            self.terminal
-                                .draw(|frame| match &self.state {
-                                    State::Timeline(Timeline::Home, i) => {
-                                        let timeline = TimelineWidget::new(
-                                            *i,
-                                            self.timelines.home.iter().collect(),
-                                        );
-                                        let bl = Block::new()
-                                            .borders(Borders::all())
-                                            .title(self.instance.clone());
-                                        let timeline_area = bl.inner(frame.area());
-
-                                        frame.render_widget(bl, frame.area());
-                                        frame.render_widget(timeline, timeline_area);
-                                    }
-                                    _ => (),
-                                })
-                                .unwrap();
+                            self.terminal.draw(|frame| todo!())?;
                         }
                     }
                     Message::Input(e) => {

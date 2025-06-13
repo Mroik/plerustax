@@ -11,7 +11,7 @@ use tokio::{sync::mpsc::Sender, task::JoinSet, time::sleep};
 
 mod app;
 mod pleroma;
-mod renderer;
+pub mod renderer;
 
 const RENDER_SPEED: u64 = 1000 / 25;
 const TICK_RATE: u64 = 1000 / 60;
@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
     api.login(&username, &password).await?;
 
     let mut backend = api.backend().await;
-    let mut app = App::new(INSTANCE).await;
+    let mut app = App::new(INSTANCE).await?;
     backend.register_app(app.send_end.clone()).await;
     app.register_backend(backend.send_end.clone()).await;
 

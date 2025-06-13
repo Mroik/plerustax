@@ -12,14 +12,14 @@ use crossterm::{
 
 use super::utils::Pixel;
 
-struct Frame<'a> {
+pub struct Frame<'a> {
     terminal: &'a mut Terminal,
 }
 
 /// Rapresents the terminal. On instancing it sets the terminal
 /// to alternate screen and enables raw mode. On drop it disables
 /// and reverts to the original screen.
-struct Terminal {
+pub struct Terminal {
     frame_pixels: Vec<Pixel>,
     output: Stdout,
 }
