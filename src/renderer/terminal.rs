@@ -6,14 +6,46 @@ use std::{
 use anyhow::Result;
 use crossterm::{
     ExecutableCommand,
+    cursor::{MoveTo, position},
     style::{Color, Print, Stylize},
     terminal::{EnterAlternateScreen, LeaveAlternateScreen},
 };
+
+use crate::renderer::utils::Drawable;
 
 use super::utils::Pixel;
 
 pub struct Frame<'a> {
     terminal: &'a mut Terminal,
+    buffer: Vec<Pixel>,
+    top: u16,
+    left: u16,
+    bottom: u16,
+    right: u16,
+}
+
+impl Frame<'_> {
+    fn write(&mut self, p: Pixel) {
+        self.buffer.push(p);
+    }
+
+    // TODO: Check bounds
+    fn write_str(&mut self, s: &str, x: u16, y: u16, fg: Color, bg: Color) {
+        self.buffer
+            .extend(s.chars().enumerate().map(|(i, c)| Pixel {
+                char: c,
+                x: x + i as u16,
+                y,
+                fg,
+                bg,
+            }));
+    }
+
+    // TODO: Generate new frame to use for widget rendering.
+    // This is done to enforce bounds limits.
+    fn render_widget(&mut self, widget: impl Drawable) {
+        todo!()
+    }
 }
 
 /// Rapresents the terminal. On instancing it sets the terminal
@@ -35,8 +67,17 @@ impl Terminal {
         })
     }
 
-    fn frame(&mut self) -> Frame {
-        Frame { terminal: self }
+    fn frame(&mut self) -> Result<Frame> {
+        self.output.execute(MoveTo(9000, 9000))?;
+        let (right, bottom) = position().unwrap();
+        Ok(Frame {
+            terminal: self,
+            buffer: Vec::new(),
+            top: 0,
+            left: 0,
+            right,
+            bottom,
+        })
     }
 
     /// Generate the lines to print for the next frame
@@ -125,8 +166,10 @@ impl Terminal {
     where
         T: FnOnce(&mut Frame),
     {
-        let mut f = self.frame();
+        let mut f = self.frame()?;
         callback(&mut f);
+        let buf = f.buffer;
+        self.frame_pixels.extend(buf);
         let ui = self.generate_frame_pixels();
         self.output.execute(Print(ui))?;
         Ok(())

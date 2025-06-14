@@ -47,6 +47,7 @@ pub struct Area {
 }
 
 pub trait Drawable {
+    // TODO: Make render bounds
     /// The assurance of drawing within the bounds is
     /// responsibility of the user. Whoever calls render
     /// doesn't make guarantees.
